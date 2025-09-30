@@ -1,0 +1,14 @@
+{
+    "name": "minecraft-forward-bot",
+    "version": "1.0.0",
+    "description": "A mineflayer bot deployed to Render that holds the 'W' key for continuous movement.",
+    "main": "bot.js",
+    "scripts": {
+        "start": "node bot.js"
+    },
+    "dependencies": {
+        "mineflayer": "^4.20.0"
+    },
+    "author": "",
+    "license": "ISC"
+}
