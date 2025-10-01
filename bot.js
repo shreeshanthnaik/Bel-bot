@@ -1,20 +1,19 @@
-// bot.js - Simple bot that connects and holds the 'forward' control state (W).
+// bot.js - Bot that connects and continuously moves in a circle.
 
 const mineflayer = require('mineflayer');
 
 // --- Configuration ---
-// DIRECT VALUES: These values are now hardcoded based on the user's request.
+// DIRECT VALUES: Hardcoded server and bot details based on user input.
 const HOST = 'Beliver_SMP.aternos.me';
 const PORT = 59264;
 const USERNAME = 'Belbot';
-const PASSWORD = process.env.MC_PASSWORD || 'Belbot'; // Keeping password as optional ENV or direct value
-const VERSION = '1.12.1'; // Directly setting the Minecraft version
+const PASSWORD = process.env.MC_PASSWORD || 'Belbot'; 
+const VERSION = '1.12.1'; 
 
-// Target coordinates read from Render Environment Variables for logging only
-const TARGET_X = process.env.TARGET_X;
-const TARGET_Z = process.env.TARGET_Z;
-
-// Note: Removed the safety check (!HOST || !USERNAME) since values are hardcoded.
+// CIRCLE CONFIGURATION
+// To run in a circle, the bot must hold 'forward' and 'turn left'/'turn right'.
+// Adjusting the TURN_SPEED (delay) changes the circle's radius.
+const TURN_SPEED = 50; // Milliseconds between control state changes (controls radius/speed)
 
 const botOptions = {
     host: HOST,
@@ -32,45 +31,46 @@ function createBot() {
     bot = mineflayer.createBot(botOptions);
 
     // --- Bot Functions ---
-    function startWalking() {
-        console.log(`Starting constant 'W' press.`);
-        console.log(`NOTE: Bot assumes you have manually set its gamemode to SPECTATOR and oriented it towards X: ${TARGET_X}, Z: ${TARGET_Z}.`);
+    function startCircling() {
+        console.log(`Starting constant forward movement and turning left to form a circle.`);
+        console.log(`NOTE: The combination of 'forward' and 'left' makes the bot circle.`);
 
-        // Set the 'forward' control state to true immediately and keep it true.
+        // 1. Set Forward Control (Move)
         bot.setControlState('forward', true);
         
-        // Chat a confirmation message on the server
-        bot.chat(`I am now holding 'W' and flying towards the target area.`);
+        // 2. Set Left Control (Turn)
+        // By setting both true, the bot will run in a circle.
+        bot.setControlState('left', true);
+
+        // NOTE: We don't need a loop (like setInterval) here, 
+        // as setControlState(true) keeps the key pressed indefinitely.
     }
 
     // --- Event Handlers ---
     bot.on('login', () => {
         console.log(`\n🎉 Bot connected successfully! Logged in as: ${bot.username}`);
         
-        // Start the simple walking behavior 5 seconds after login.
-        setTimeout(startWalking, 5000); 
+        // Start the circular movement 5 seconds after login.
+        setTimeout(startCircling, 5000); 
     });
 
     bot.on('kicked', (reason) => {
         console.error(`\n💥 KICKED! Reason: ${reason}`);
-        console.log('Attempting to reconnect in 10 seconds...');
-        bot.end(); // Manually end to trigger 'end' event
+        console.log('Attempting to reconnect in 5 seconds...');
+        // bot.end() should trigger the 'end' handler which restarts the bot
+        bot.end(); 
     });
 
     bot.on('error', (err) => {
         console.error(`\n❌ Bot Error: ${err.message}`);
-        // Log common connection errors and try to restart the bot
-        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'EHOSTUNREACH') {
-            console.error('Connection failed. Retrying in 10 seconds...');
-        }
-        // bot.end() should ideally be called here but sometimes error triggers 'end' implicitly
     });
 
     bot.on('end', () => {
         console.log('\n🛑 Bot disconnected. Reconnecting in 5 seconds...');
-        // Crucial: Clear the forward state before reconnecting attempt
+        // Crucial: Clear controls before reconnecting attempt
         if (bot && bot.controlState) {
             bot.setControlState('forward', false);
+            bot.setControlState('left', false);
         }
         setTimeout(createBot, 5000);
     });
