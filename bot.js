@@ -6,8 +6,6 @@ const mineflayer = require('mineflayer');
 // DIRECT VALUES: These values are now hardcoded based on the user's request.
 const HOST = 'Beliver_SMP.aternos.me';
 const PORT = 59264;
-const USERNAME = 'Belbot';
-const PASSWORD = process.env.MC_PASSWORD || 'Belbot'; // Keeping password as optional ENV or direct value
 const VERSION = '1.12.1'; // Directly setting the Minecraft version
 
 // Target coordinates read from Render Environment Variables for logging only
