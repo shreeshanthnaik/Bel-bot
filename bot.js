@@ -1,4 +1,4 @@
-// bot.js - Bot that connects and continuously moves in a circle.
+// bot.js - Bot that connects and continuously cycles through WASD controls.
 
 const mineflayer = require('mineflayer');
 
@@ -10,48 +10,67 @@ const USERNAME = 'Belbot';
 const PASSWORD = process.env.MC_PASSWORD || 'Belbot'; 
 const VERSION = '1.12.1'; 
 
-// CIRCLE CONFIGURATION
-// To run in a circle, the bot must hold 'forward' and 'turn left'/'turn right'.
-// Adjusting the TURN_SPEED (delay) changes the circle's radius.
-const TURN_SPEED = 50; // Milliseconds between control state changes (controls radius/speed)
+// MOVEMENT SEQUENCE CONFIGURATION
+// Time (in milliseconds) the bot spends on each control (W, A, S, or D).
+const STEP_DURATION = 1500; // 1.5 seconds per direction (W, A, S, D)
 
-const botOptions = {
-    host: HOST,
-    port: PORT,
-    username: USERNAME,
-    password: PASSWORD,
-    version: VERSION,
-    hideErrors: false,
-};
+// The sequence of controls to cycle through: Forward, Left, Backward, Right
+const MOVEMENT_SEQUENCE = ['forward', 'left', 'back', 'right'];
 
 let bot;
+let moveInterval = null;
+let currentStep = 0;
 
 function createBot() {
     console.log(`Attempting to connect to ${HOST}:${PORT} as ${USERNAME} (Version: ${VERSION})...`);
     bot = mineflayer.createBot(botOptions);
 
-    // --- Bot Functions ---
-    function startCircling() {
-        console.log(`Starting constant forward movement and turning left to form a circle.`);
-        console.log(`NOTE: The combination of 'forward' and 'left' makes the bot circle.`);
+    // --- Bot Utility Functions ---
 
-        // 1. Set Forward Control (Move)
-        bot.setControlState('forward', true);
-        
-        // 2. Set Left Control (Turn)
-        // By setting both true, the bot will run in a circle.
-        bot.setControlState('left', true);
-
-        // NOTE: We don't need a loop (like setInterval) here, 
-        // as setControlState(true) keeps the key pressed indefinitely.
+    // Function to clear all current control states (stop movement)
+    function clearAllControls() {
+        if (bot) {
+            MOVEMENT_SEQUENCE.forEach(control => bot.setControlState(control, false));
+        }
     }
+
+    // Function to execute the next step in the WASD sequence
+    function cycleMovement() {
+        // 1. Clear previous control
+        clearAllControls();
+
+        // 2. Determine the control for the current step (W, A, S, or D)
+        const controlToSet = MOVEMENT_SEQUENCE[currentStep];
+
+        // 3. Set the new control state (Hold the button)
+        if (bot) {
+            bot.setControlState(controlToSet, true);
+            console.log(`[Movement] -> Set control: ${controlToSet}`);
+        }
+
+        // 4. Move to the next step index for the next cycle
+        currentStep = (currentStep + 1) % MOVEMENT_SEQUENCE.length;
+    }
+
+
+    // --- Core Startup Function ---
+    function startWasdCycle() {
+        console.log(`Starting WASD movement cycle. Changing direction every ${STEP_DURATION / 1000} seconds.`);
+
+        // Start the cycle immediately
+        cycleMovement();
+
+        // Start the timed interval loop to switch controls
+        moveInterval = setInterval(cycleMovement, STEP_DURATION);
+    }
+
 
     // --- Event Handlers ---
     bot.on('login', () => {
         console.log(`\n🎉 Bot connected successfully! Logged in as: ${bot.username}`);
         
-        // Start the circular movement 5 seconds after login.
-        setTimeout(startCircling, 5000); 
+        // Start the WASD sequence 5 seconds after login.
+        setTimeout(startWasdCycle, 5000); 
     });
 
     bot.on('kicked', (reason) => {
@@ -67,14 +86,28 @@ function createBot() {
 
     bot.on('end', () => {
         console.log('\n🛑 Bot disconnected. Reconnecting in 5 seconds...');
-        // Crucial: Clear controls before reconnecting attempt
-        if (bot && bot.controlState) {
-            bot.setControlState('forward', false);
-            bot.setControlState('left', false);
+        
+        // Clear the interval loop when disconnecting
+        if (moveInterval) {
+            clearInterval(moveInterval);
+            moveInterval = null;
         }
+
+        // Clear controls
+        clearAllControls();
+        
         setTimeout(createBot, 5000);
     });
 }
+
+const botOptions = {
+    host: HOST,
+    port: PORT,
+    username: USERNAME,
+    password: PASSWORD,
+    version: VERSION,
+    hideErrors: false,
+};
 
 createBot();
 
