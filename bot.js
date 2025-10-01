@@ -17,8 +17,6 @@ const TARGET_Z = process.env.TARGET_Z;
 const botOptions = {
     host: HOST,
     port: PORT,
-    username: USERNAME,
-    password: PASSWORD,
     version: VERSION,
     hideErrors: false,
 };
