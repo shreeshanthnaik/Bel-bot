@@ -76,9 +76,7 @@ function createBot() {
 
     bot.on('kicked', (reason) => {
         console.error(`\n💥 KICKED! Reason: ${reason}`);
-        console.log('Attempting to reconnect in 5 seconds...');
-        // bot.end() should trigger the 'end' handler which restarts the bot
-        bot.end(); 
+        // When kicked, we just log it and let the 'end' handler clean up without reconnecting.
     });
 
     bot.on('error', (err) => {
@@ -86,7 +84,7 @@ function createBot() {
     });
 
     bot.on('end', () => {
-        console.log('\n🛑 Bot disconnected. Reconnecting in 5 seconds...');
+        console.log('\n🛑 Bot disconnected. Auto-reconnect disabled per user request.');
         
         // Clear the interval loop when disconnecting
         if (moveInterval) {
@@ -97,7 +95,8 @@ function createBot() {
         // Clear controls
         clearAllControls();
         
-        setTimeout(createBot, 5000);
+        // *** REMOVED: setTimeout(createBot, 5000); ***
+        // The bot will now stay disconnected after being kicked or losing connection.
     });
 }
 
