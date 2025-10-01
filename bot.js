@@ -12,7 +12,8 @@ const VERSION = '1.12.1';
 
 // MOVEMENT SEQUENCE CONFIGURATION
 // Time (in milliseconds) the bot spends on each control (W, A, S, or D).
-const STEP_DURATION = 1500; // 1.5 seconds per direction (W, A, S, D)
+// Reduced to 1000ms (1 second) to create a tighter, 2-block radius cycle.
+const STEP_DURATION = 1000; // 1.0 second per direction (W, A, S, D)
 
 // The sequence of controls to cycle through: Forward, Left, Backward, Right
 const MOVEMENT_SEQUENCE = ['forward', 'left', 'back', 'right'];
