@@ -6,6 +6,7 @@ const mineflayer = require('mineflayer');
 // DIRECT VALUES: These values are now hardcoded based on the user's request.
 const HOST = 'Beliver_SMP.aternos.me';
 const PORT = 59264;
+const USERNAME = 'Belbot';
 const VERSION = '1.12.1'; // Directly setting the Minecraft version
 
 // Target coordinates read from Render Environment Variables for logging only
@@ -17,6 +18,7 @@ const TARGET_Z = process.env.TARGET_Z;
 const botOptions = {
     host: HOST,
     port: PORT,
+    username: USERNAME,
     version: VERSION,
     hideErrors: false,
 };
