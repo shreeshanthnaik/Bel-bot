@@ -8,7 +8,7 @@ const HOST = 'Beliver_SMP.aternos.me';
 const PORT = 59264;
 const USERNAME = 'Belbot';
 const PASSWORD = process.env.MC_PASSWORD || 'Belbot'; 
-const VERSION = '1.12.1'; 
+const VERSION = '1.12.9'; 
 
 // MOVEMENT SEQUENCE CONFIGURATION
 // Time (in milliseconds) the bot spends on each control (W, A, S, or D).
