@@ -15,5 +15,5 @@ git init
 git add .
 git commit -m "Initial commit for forward-flying bot"
 git branch -M main
-git remote add origin <YOUR_GITHUB_REPO_URL>
+git remote add origin [<YOUR_GITHUB_REPO_URL>](https://github.com/shreeshanthnaik/Bel-bot)
 git push -u origin main
