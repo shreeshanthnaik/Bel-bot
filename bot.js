@@ -4,10 +4,10 @@ const mineflayer = require('mineflayer');
 
 // --- Configuration ---
 // DIRECT VALUES: Hardcoded server and bot details based on user input.
-const HOST = 'Beliver_SMP.aternos.me';
-const PORT = 59264;
-const USERNAME = 'Belbot';
-const PASSWORD = process.env.MC_PASSWORD || 'Belbot'; 
+const HOST = 'adress of the server';
+const PORT = 'port';
+const USERNAME = 'name of the bot';
+const PASSWORD = process.env.MC_PASSWORD || 'name of the bot'; 
 const VERSION = '1.12.9'; 
 
 // MOVEMENT SEQUENCE CONFIGURATION
