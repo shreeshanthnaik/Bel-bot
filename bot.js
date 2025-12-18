@@ -1,21 +1,12 @@
-// bot.js - Bot that connects and continuously cycles through WASD controls.
-
 const mineflayer = require('mineflayer');
 
 // --- Configuration ---
-// DIRECT VALUES: Hardcoded server and bot details based on user input.
-const HOST = 'adress of the server';
+const HOST = 'server';
 const PORT = 'port';
-const USERNAME = 'name of the bot';
-const PASSWORD = process.env.MC_PASSWORD || 'name of the bot'; 
-const VERSION = '1.12.9'; 
+const USERNAME = 'Bot';
+const VERSION = '1.21.1'; // Use 1.21.1 for Java 1.21.x
 
-// MOVEMENT SEQUENCE CONFIGURATION
-// Time (in milliseconds) the bot spends on each control (W, A, S, or D).
-// Reduced to 500ms (0.5 seconds) to create a very tight, 1-block radius cycle.
-const STEP_DURATION = 500; // 0.5 second per direction (W, A, S, D)
-
-// The sequence of controls to cycle through: Forward, Left, Backward, Right
+const STEP_DURATION = 800; // Slightly slower for better stability
 const MOVEMENT_SEQUENCE = ['forward', 'left', 'back', 'right'];
 
 let bot;
@@ -23,98 +14,77 @@ let moveInterval = null;
 let currentStep = 0;
 
 function createBot() {
-    console.log(`Attempting to connect to ${HOST}:${PORT} as ${USERNAME} (Version: ${VERSION})...`);
-    bot = mineflayer.createBot(botOptions);
+    console.log(`[System] Connecting to ${HOST}:${PORT} (Ver: ${VERSION})...`);
 
-    // --- Bot Utility Functions ---
+    bot = mineflayer.createBot({
+        host: HOST,
+        port: PORT,
+        username: USERNAME,
+        version: VERSION,
+        // These settings help fix the 1.21 protocol/disconnect issues:
+        checkTimeoutInterval: 60000, 
+        auth: 'offline' 
+    });
 
-    // Function to clear all current control states (stop movement)
+    // --- Core Functions ---
+
     function clearAllControls() {
-        if (bot) {
+        if (bot && bot.controlState) {
             MOVEMENT_SEQUENCE.forEach(control => bot.setControlState(control, false));
         }
     }
 
-    // Function to execute the next step in the WASD sequence
     function cycleMovement() {
-        // 1. Clear previous control
+        if (!bot.entity) return; // Don't move if not spawned
+        
         clearAllControls();
-
-        // 2. Determine the control for the current step (W, A, S, or D)
         const controlToSet = MOVEMENT_SEQUENCE[currentStep];
-
-        // 3. Set the new control state (Hold the button)
-        if (bot) {
-            bot.setControlState(controlToSet, true);
-            console.log(`[Movement] -> Set control: ${controlToSet}`);
-        }
-
-        // 4. Move to the next step index for the next cycle
+        bot.setControlState(controlToSet, true);
+        
+        // Add a random arm swing to look more "human" to Aternos
+        bot.swingArm('right'); 
+        
         currentStep = (currentStep + 1) % MOVEMENT_SEQUENCE.length;
     }
 
-
-    // --- Core Startup Function ---
-    function startWasdCycle() {
-        console.log(`Starting WASD movement cycle. Changing direction every ${STEP_DURATION / 1000} seconds.`);
-
-        // Start the cycle immediately
-        cycleMovement();
-
-        // Start the timed interval loop to switch controls
-        moveInterval = setInterval(cycleMovement, STEP_DURATION);
-    }
-
-
     // --- Event Handlers ---
-    bot.on('login', () => {
-        console.log(`\n🎉 Bot connected successfully! Logged in as: ${bot.username}`);
-        
-        // Start the WASD sequence 5 seconds after login.
-        setTimeout(startWasdCycle, 5000); 
-    });
 
-    bot.on('kicked', (reason) => {
-        console.error(`\n💥 KICKED! Reason: ${reason}`);
-        // When kicked, we just log it and let the 'end' handler clean up without reconnecting.
+    bot.on('spawn', () => {
+        console.log('✅ Bot spawned in the world!');
+        
+        // Wait 3 seconds after spawning before moving to avoid "Internal Server Error"
+        setTimeout(() => {
+            if (!moveInterval) {
+                console.log('🚀 Starting AFK movement cycle...');
+                moveInterval = setInterval(cycleMovement, STEP_DURATION);
+            }
+        }, 3000);
     });
 
     bot.on('error', (err) => {
-        console.error(`\n❌ Bot Error: ${err.message}`);
+        console.error('❌ Bot Error:', err.message);
+        if (err.message.includes('ECONNREFUSED')) {
+            console.log('👉 Tip: Is your Aternos server actually ONLINE?');
+        }
+    });
+
+    bot.on('kicked', (reason) => {
+        console.warn('⚠️ Bot was kicked. Reason:', reason);
     });
 
     bot.on('end', () => {
-        console.log('\n🛑 Bot disconnected. Auto-reconnect disabled per user request.');
-        
-        // Clear the interval loop when disconnecting
-        if (moveInterval) {
-            clearInterval(moveInterval);
-            moveInterval = null;
-        }
-
-        // Clear controls
-        clearAllControls();
-        
-        // *** REMOVED: setTimeout(createBot, 5000); ***
-        // The bot will now stay disconnected after being kicked or losing connection.
+        console.log('🛑 Connection lost. Reconnecting in 15 seconds...');
+        if (moveInterval) clearInterval(moveInterval);
+        moveInterval = null;
+        setTimeout(createBot, 15000); // Auto-reconnect enabled for Aternos stability
     });
 }
 
-const botOptions = {
-    host: HOST,
-    port: PORT,
-    username: USERNAME,
-    password: PASSWORD,
-    version: VERSION,
-    hideErrors: false,
-};
-
 createBot();
 
+// Handle Ctrl+C safely
 process.on('SIGINT', () => {
-    console.log('Bot shutting down...');
-    if (bot) {
-        bot.end();
-    }
+    console.log('Shutting down bot...');
+    if (bot) bot.end();
     process.exit(0);
 });
